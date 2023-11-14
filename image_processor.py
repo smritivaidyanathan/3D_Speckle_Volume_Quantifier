@@ -8,13 +8,19 @@ from skimage.registration import phase_cross_correlation
 from scipy.ndimage import gaussian_filter
 import napari
 import matplotlib.pyplot as plt
+import os
 
 
 
-def nd2converter(nd2_file_path, channel):
-    nd2 = nd2reader.Nd2(nd2_file_path)
-    channel = nd2.select(channels=channel)
-    io.imsave(f'tiff_images/_channel_{channel}.tiff', nd2[0])
+def nd2converter(nd2_file_path, channel_num):
+    nd2 = nd2reader.ND2Reader(nd2_file_path)
+    print(nd2.sizes['z'])
+    arr = []
+    for z in range (nd2.sizes['z']):
+        arr.append(nd2.get_frame_2D(channel_num, 0, z, 0, 0, 0))
+    arr = np.array(arr, dtype='uint16')
+    io.imsave(f'tiff_images/{os.path.basename(nd2_file_path)}_C-{channel_num}.tiff', arr)
+    return (f'tiff_images/{os.path.basename(nd2_file_path)}_C-{channel_num}.tiff')
 
 
 def imageProcessor(path):
@@ -94,8 +100,10 @@ def viewSegmentation (path):
 
     napari.run()
 
-# print(imageProcessor("Hrp38GFP_CLAMP(red)_con001.nd2 - C=2.tif"))
-viewSegmentation("tiff_images/hi.tif")
 
-path_to_folder = "/volumes/Research-1/BM_LarschanLab/mukulika/5_13_21_GFPlines+CLAMP(red)"
-nd2converter(path_to_folder+"/Hrp38GFP_CLAMP(red)_con.nd2", "405")
+
+def loopThroughAllImages(path_to_nd2, channel_num):
+    viewSegmentation(nd2converter(path_to_nd2, channel_num))
+
+path_to_folder = "/volumes/Research/BM_LarschanLab/mukulika/5_13_21_GFPlines+CLAMP(red)" + "/Hrp38GFP_CLAMP(red)_con001.nd2"
+loopThroughAllImages(path_to_folder, 0)
