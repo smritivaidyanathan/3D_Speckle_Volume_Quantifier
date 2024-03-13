@@ -20,7 +20,7 @@ import csv
 
 
 def nd2converter(file_path, nd2_file, channel_num):
-    nd2_file_path = file_path + "/nd2/" + nd2_file
+    nd2_file_path = file_path + "nd2/" + nd2_file
     nd2 = nd2reader.ND2Reader(nd2_file_path)
     print(f"{nd2.sizes['z']} z-stacks in {nd2_file_path}/nd2/ found.")
     arr = []
@@ -38,15 +38,15 @@ def nd2converter(file_path, nd2_file, channel_num):
     else:
         print(f"Uh oh! Something went wrong. Tiff with {z} z-stacks of {w}x{h} size images was created. Is this what you expected?")
         return -1
-    tiff_file_path = file_path + "/tiff"
+    tiff_file_path = file_path + "tiff"
     io.imsave(f'{tiff_file_path}/{os.path.basename(nd2_file_path)}_C-{channel_num}.tiff', arr)
     return (f'{tiff_file_path}/{os.path.basename(nd2_file_path)}_C-{channel_num}.tiff')
 
 
-def imageProcessor(path, speckle_volumes):
+def imageProcessor(path):
     # Load your 3D stack image
     image = np.stack(io.imread(path), axis = 0)
-
+    speckle_volumes = []
     # Apply Gaussian smoothing to reduce noise.
     sigma = 1.0
     smoothed_image = gaussian_filter(image, sigma=sigma)
@@ -55,7 +55,7 @@ def imageProcessor(path, speckle_volumes):
     # Thresholding
     print(np.mean(smoothed_image))
     print(np.std(smoothed_image))
-    threshold_new = np.mean(smoothed_image) + (8*np.std(smoothed_image))
+    threshold_new = np.mean(smoothed_image) + (9*np.std(smoothed_image))
     print(threshold_new)
     # Thresholding
     binary_image3 = smoothed_image > threshold_new
@@ -81,7 +81,7 @@ def viewSegmentation (path):
 
     print(np.mean(smoothed_image))
     print(np.std(smoothed_image))
-    threshold_new = np.mean(smoothed_image) + (8*np.std(smoothed_image))
+    threshold_new = np.mean(smoothed_image) + (9*np.std(smoothed_image))
     print(threshold_new)
     # Thresholding
     binary_image3 = smoothed_image > threshold_new
@@ -140,38 +140,38 @@ def writeVolumesToCSV(volumes, background, csv_path):
     # Specify the CSV file path
     csv_file_path = csv_path + background + ".csv"
 
-    # Open the CSV file in write mode
+
     with open(csv_file_path, mode='w', newline='') as file:
-        # Create a CSV writer object
-        writer = csv.writer(file)
-
-        # Write each value as a separate row
-        for value in volumes:
-            writer.writerow([value])
+        csvwriter = csv.writer(file)
+        csvwriter.writerows(volumes) 
 
 
-def loopThroughAllImages(path, backgrounds, nd2_image_names, channel_num):
+def loopThroughAllImages(path, backgrounds, channel_num):
     speckle_volumes = []
-    path_to_nd2 = path + "/nd2/"
-    path_to_tiff =  path + "/tiff/"
-    path_to_csv =  path + "/csv/"
+    path_to_nd2 = path + "nd2/"
+    path_to_tiff =  path + "tiff/"
+    path_to_csv =  path + "csv/"
     file_names = getFileNames(path_to_nd2, backgrounds)
     for i in range(len(backgrounds)):
         print(f"\nRunning {backgrounds[i]} images...")
         file_name_background = file_names[i]
+        file_volumes = []
+        num_vols_in_background = 0
         for nd2 in file_name_background:
-            tiff_path = f"{path_to_tiff}/{os.path.basename(path_to_nd2 + nd2)}_C-{channel_num}.tiff"
+            tiff_path = f"{path_to_tiff}{os.path.basename(path_to_nd2 + nd2)}_C-{channel_num}.tiff"
             if not os.path.exists(tiff_path):
-                numvol = len(speckle_volumes)
                 print("Tiff file " + tiff_path + " does not exist yet. Converting from nd2.") 
                 result = nd2converter(path, nd2, channel_num)
                 if (result == -1):
                     print("Skipping ... Error found ...")
                     continue
-            speckle_volumes = imageProcessor(result, speckle_volumes)
-            writeVolumesToCSV(speckle_volumes, backgrounds[i], path_to_csv)
-            print("Identified " + str(len(speckle_volumes) - numvol) + " volumes from " + nd2)
-            print("---------------------------------------------------------")
+            file_volumes.append(imageProcessor(tiff_path))
+        num_vols_in_background += len(file_volumes)
+        speckle_volumes.append(file_volumes)
+        print(file_volumes)
+        writeVolumesToCSV(speckle_volumes, backgrounds[i], path_to_csv)
+        print("Identified " + str(len(speckle_volumes) - num_vols_in_background) + " volumes from " + nd2)
+        print("---------------------------------------------------------")
         
     return speckle_volumes
 
@@ -180,21 +180,11 @@ def loopThroughAllImages(path, backgrounds, nd2_image_names, channel_num):
 
 
 
-path_to_exp = "/volumes/Research/BM_LarschanLab/Smriti/colocalization_exp/in_vitro/"
+path_to_exp = "/volumes/Research/BM_LarschanLab/Mukulika/Feb2024/"
 
+speckle_volumes = loopThroughAllImages(path_to_exp, ["Female_PrLD mutant_Hrp38GFP_SG"], 1)
 
-print("\nRunning control images...")
-control_images = ["Number_1-Hrp38red and TEV.nd2", "Number_2-Hrp38red and CLAMP1-300WTgreenwithTEV.nd2"]
-control_volumes = loopThroughAllImages(path_to_exp, control_images,  0)
-print("\n ============================================================================ \n")
-print("\nRunning PRLD images...")
-prld_images = ["Number_5Hrp38red and CLAMP1-300delPrLDgreenwithTEV2.nd2"]
-prld_volumes = loopThroughAllImages(path_to_exp, prld_images,  0)
-print("\n ============================================================================ \n")
-print("\nAll done!!! :)")
-
-
-
+viewSegmentation("/volumes/Research/BM_LarschanLab/Mukulika/Feb2024/tiff/Female_PrLD mutant_Hrp38GFP_SG.nd2_C-1.tiff")
 
 # files = os.listdir("tiff_images_2")
 # files = [f for f in files if os.path.isfile(os.path.join(f"{path_to_exp}/tiff", f))]
