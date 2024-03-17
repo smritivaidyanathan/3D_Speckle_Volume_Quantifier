@@ -53,10 +53,7 @@ def imageProcessor(path):
 
 
     # Thresholding
-    print(np.mean(smoothed_image))
-    print(np.std(smoothed_image))
     threshold_new = np.mean(smoothed_image) + (9*np.std(smoothed_image))
-    print(threshold_new)
     # Thresholding
     binary_image3 = smoothed_image > threshold_new
 
@@ -143,7 +140,8 @@ def writeVolumesToCSV(volumes, background, csv_path):
 
     with open(csv_file_path, mode='w', newline='') as file:
         csvwriter = csv.writer(file)
-        csvwriter.writerows(volumes) 
+        for movie in volumes:
+            csvwriter.writerow(movie) 
 
 
 def loopThroughAllImages(path, backgrounds, channel_num):
@@ -157,6 +155,7 @@ def loopThroughAllImages(path, backgrounds, channel_num):
         file_name_background = file_names[i]
         file_volumes = []
         num_vols_in_background = 0
+        nd2num = 1
         for nd2 in file_name_background:
             tiff_path = f"{path_to_tiff}{os.path.basename(path_to_nd2 + nd2)}_C-{channel_num}.tiff"
             if not os.path.exists(tiff_path):
@@ -165,11 +164,14 @@ def loopThroughAllImages(path, backgrounds, channel_num):
                 if (result == -1):
                     print("Skipping ... Error found ...")
                     continue
+            else:
+                print("Tiff file " + tiff_path + " already exists. Proceeding to quantification.") 
             file_volumes.append(imageProcessor(tiff_path))
+            print(f"{nd2num}/{len(file_name_background)} files quantified") 
         num_vols_in_background += len(file_volumes)
         speckle_volumes.append(file_volumes)
         print(file_volumes)
-        writeVolumesToCSV(speckle_volumes, backgrounds[i], path_to_csv)
+        writeVolumesToCSV(file_volumes, backgrounds[i], path_to_csv)
         print("Identified " + str(len(speckle_volumes) - num_vols_in_background) + " volumes from " + nd2)
         print("---------------------------------------------------------")
         
@@ -182,7 +184,7 @@ def loopThroughAllImages(path, backgrounds, channel_num):
 
 path_to_exp = "/volumes/Research/BM_LarschanLab/Mukulika/Feb2024/"
 
-speckle_volumes = loopThroughAllImages(path_to_exp, ["Female_PrLD mutant_Hrp38GFP_SG"], 1)
+speckle_volumes = loopThroughAllImages(path_to_exp, ["Female_PrLD mutant"], 1)
 
 viewSegmentation("/volumes/Research/BM_LarschanLab/Mukulika/Feb2024/tiff/Female_PrLD mutant_Hrp38GFP_SG.nd2_C-1.tiff")
 
