@@ -28,7 +28,8 @@ def nd2converter(file_path, nd2_file, channel_num):
     for z in range (nd2.sizes['z']):
         arr.append(nd2.get_frame_2D(channel_num, 0, z, 0, 0, 0))
         progress = round(float(z/nd2.sizes['z']) * 100)
-        print(f"{round(float(z/nd2.sizes['z']) * 100)}% done.")
+        if (progress % 10 == 0):
+            print(f"{progress}% done.")
     arr = np.array(arr, dtype='uint16')
     print("Done adding z-stacks.")
 
@@ -166,13 +167,15 @@ def loopThroughAllImages(path, backgrounds, channel_num):
                     continue
             else:
                 print("Tiff file " + tiff_path + " already exists. Proceeding to quantification.") 
-            file_volumes.append(imageProcessor(tiff_path))
-            print(f"{nd2num}/{len(file_name_background)} files quantified") 
+            volumes_from_file = imageProcessor(tiff_path)    
+            file_volumes.append(volumes_from_file)
+            print(f"{nd2num}/{len(file_name_background)} files quantified")
+            print(f"Identified {len(volumes_from_file)} volumes from {tiff_path}") 
         num_vols_in_background += len(file_volumes)
         speckle_volumes.append(file_volumes)
         print(file_volumes)
         writeVolumesToCSV(file_volumes, backgrounds[i], path_to_csv)
-        print("Identified " + str(len(speckle_volumes) - num_vols_in_background) + " volumes from " + nd2)
+        print(f"Identified {num_vols_in_background} volumes from {backgrounds[i]}") 
         print("---------------------------------------------------------")
         
     return speckle_volumes
