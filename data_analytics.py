@@ -6,6 +6,8 @@ import numpy as np
 from scipy.stats import sem
 from scipy import stats
 import csv
+import tkinter as tk
+from tkinter import filedialog
 
 def make_dist_histogram(data_backgrounds, legend, title, save_path, ylim = -1, ranges = None, show = False, bins=50):
     for i in range(len(data_backgrounds)):
@@ -17,7 +19,7 @@ def make_dist_histogram(data_backgrounds, legend, title, save_path, ylim = -1, r
     plt.title(f"{title}")
     plt.grid(True)
     if (ylim != -1):
-        plt.ylim(top=ylim) 
+        plt.ylim(top = ylim)
     plt.legend()
     if (show):
         plt.show()
@@ -101,14 +103,27 @@ def get_data_for_backgrounds(data_backgrounds_dict, selected_backgrounds):
 
 #ideally turn this into a GUI application
 def display_figs_from_exp(path):
-    path_to_csv= path_to_exp + "/csv/"
+    path_to_csv= path + "/csv/"
     data_backgrounds_dict = csv_files_to_dict(path_to_csv)
     selected_backgrounds = ["Female_PrLD"]
     data_backgrounds = get_data_for_backgrounds(data_backgrounds_dict, selected_backgrounds)
-    make_dist_histogram(data_backgrounds, selected_backgrounds, "In Vitro Distribution of Female PrLD speckle Volumes", f'{path_to_exp}figs/', show = True)
-    make_mean_bar(data_backgrounds, selected_backgrounds,  "In Vitro Mean of Female PrLD speckle Volumes",  f'{path_to_exp}figs/', show = True)
-    make_med_or_var_bar(data_backgrounds, selected_backgrounds,  "In Vitro Median of Female PrLD speckle Volumes",  f'{path_to_exp}figs/', show = True) 
+    make_dist_histogram(data_backgrounds, selected_backgrounds, "In Vitro Distribution of Female PrLD speckle Volumes", f'{path}figs/', ranges = (0,500), show = True)
+    make_mean_bar(data_backgrounds, selected_backgrounds, "In Vitro Mean of Female PrLD speckle Volumes",  f'{path}figs/', show = True)
+    make_med_or_var_bar(data_backgrounds, selected_backgrounds, "In Vitro Median of Female PrLD speckle Volumes",  f'{path}figs/', show = True) 
 
 path_to_exp = "/volumes/Research/BM_LarschanLab/Mukulika/Feb2024/"
 
-display_figs_from_exp(path_to_exp)
+def browse_folder():
+    print("hi")
+    folder_path = filedialog.askdirectory()
+    if folder_path:
+        root.destroy() 
+        display_figs_from_exp(folder_path)
+
+
+root = tk.Tk()
+root.title("Figure Generator")
+browse_button = tk.Button(root, text="Browse for path to experiment", command=browse_folder )
+browse_button.pack()
+root.mainloop()
+
