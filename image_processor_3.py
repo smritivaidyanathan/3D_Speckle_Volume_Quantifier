@@ -172,6 +172,7 @@ def loopThroughAllImages(path, backgrounds, channel_num):
             volumes_from_file = imageProcessor(tiff_path)    
             file_volumes.append(volumes_from_file)
             print(f"{nd2num}/{len(file_name_background)} files quantified")
+            nd2num+=1
             print(f"Identified {len(volumes_from_file)} volumes from {tiff_path}") 
         num_vols_in_background += len(file_volumes)
         speckle_volumes.append(file_volumes)

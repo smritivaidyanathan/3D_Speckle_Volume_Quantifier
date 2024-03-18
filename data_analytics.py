@@ -7,11 +7,11 @@ from scipy.stats import sem
 from scipy import stats
 import csv
 
-def make_dist_histogram(data_backgrounds, legend, title, save_path, ylim = -1, range = None, show = False, bins=50):
-    for i in range (len(data_backgrounds)):
+def make_dist_histogram(data_backgrounds, legend, title, save_path, ylim = -1, ranges = None, show = False, bins=50):
+    for i in range(len(data_backgrounds)):
         data = data_backgrounds[i]
         legend_label = legend[i]
-        plt.hist(data, bins = bins, edgecolor='k', alpha=0.7, range=None, density = True, label = f"{legend_label} (N={len(data)})")
+        plt.hist(data, bins = bins, edgecolor='k', alpha=0.7, range=ranges, density = True, label = f"{legend_label} (N={len(data)})")
         plt.xlabel('Speckle Volume (pixels)')
         plt.ylabel('Count/Total Number')
     plt.title(f"{title}")
@@ -25,13 +25,16 @@ def make_dist_histogram(data_backgrounds, legend, title, save_path, ylim = -1, r
 
 def make_mean_bar(data_backgrounds, legend, title, save_path,  show = False):
     means = [np.mean(data) for data in data_backgrounds]
+    legend_with_N = [f"{legend[i]} (N={len(data_backgrounds[i])})" for i in range(len(legend))]
     confidence_interval= [stats.t.interval(0.95, len(data)-1, loc=np.mean(data)) for data in data_backgrounds]
-    yerr=[[abs(means[i] - confidence_interval[0][i])  for i in range(len(data_backgrounds))], [abs(means[i] - confidence_interval[1][i])  for i in range(len(data_backgrounds))]]
-    plt.bar(legend, means, yerr=yerr, capsize=5, alpha=0.7)
+    print(confidence_interval)
+    print(means)
+    yerr=[[abs(means[i] - confidence_interval[i][0])  for i in range(len(data_backgrounds))], [abs(means[i] - confidence_interval[i][1])  for i in range(len(data_backgrounds))]]
+    print(yerr)
+    plt.bar(legend_with_N, means, align = 'center', capsize=5, alpha=0.7)
     plt.xlabel('Experimental Conditions')
     plt.ylabel('Mean Speckle Size (pixels)')
     plt.title(f'{title}')
-    plt.legend()
     plt.savefig(f'{save_path}{title}')
     if (show):
         plt.show()
@@ -45,8 +48,8 @@ def make_med_or_var_bar(data_backgrounds, legend, title, save_path, var = False,
         ylabel = "Variance"
 
     confidence_interval = [bootstrapcli(data) for data in data_backgrounds]
-    yerr = [[abs(quals[i] - confidence_interval[0][i])  for i in range(len(data_backgrounds))], [abs(quals[i] - confidence_interval[1][i])  for i in range(len(data_backgrounds))]]
-    plt.bar(legend, quals, yerr=yerr, capsize=5, alpha=0.7)
+    yerr = [[abs(quals[i] - confidence_interval[i][0])  for i in range(len(data_backgrounds))], [abs(quals[i] - confidence_interval[i][1])  for i in range(len(data_backgrounds))]]
+    plt.bar(legend, height = quals, yerr=yerr, capsize=5, alpha=0.7)
     plt.xlabel('Experimental Conditions')
     plt.ylabel(f'{ylabel} of Speckle Size (pixels)')
     plt.title(f'{title}')
@@ -81,6 +84,7 @@ def csv_files_to_dict(path_to_csv):
                 csv_reader = csv.reader(csv_file)
                 data = []
                 for row in csv_reader:
+                    row = [float(item) for item in row]
                     data.extend(row)
                 csv_data_dict[background] = data
     return csv_data_dict
@@ -99,7 +103,12 @@ def get_data_for_backgrounds(data_backgrounds_dict, selected_backgrounds):
 def display_figs_from_exp(path):
     path_to_csv= path_to_exp + "/csv/"
     data_backgrounds_dict = csv_files_to_dict(path_to_csv)
-    selected_backgrounds = ["Female PrLD"]
+    selected_backgrounds = ["Female_PrLD"]
     data_backgrounds = get_data_for_backgrounds(data_backgrounds_dict, selected_backgrounds)
+    make_dist_histogram(data_backgrounds, selected_backgrounds, "In Vitro Distribution of Female PrLD speckle Volumes", f'{path_to_exp}figs/', show = True)
+    make_mean_bar(data_backgrounds, selected_backgrounds,  "In Vitro Mean of Female PrLD speckle Volumes",  f'{path_to_exp}figs/', show = True)
+    make_med_or_var_bar(data_backgrounds, selected_backgrounds,  "In Vitro Median of Female PrLD speckle Volumes",  f'{path_to_exp}figs/', show = True) 
 
-    
+path_to_exp = "/volumes/Research/BM_LarschanLab/Mukulika/Feb2024/"
+
+display_figs_from_exp(path_to_exp)
