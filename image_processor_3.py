@@ -40,7 +40,8 @@ def nd2converter(file_path, nd2_file, channel_num):
         print(f"Uh oh! Something went wrong. Tiff with {z} z-stacks of {w}x{h} size images was created. Is this what you expected?")
         return -1
     tiff_file_path = file_path + "tiff"
-    io.imsave(f'{tiff_file_path}/{os.path.basename(nd2_file_path)}_C-{channel_num}.tiff', arr)
+    io.imsave(f'{tiff_file_path}/{os.path.basename(nd2_file_path)}_C-{channel_num}.tiff', arr, check_contrast=False)
+    print("Image successfully saved.")
     return (f'{tiff_file_path}/{os.path.basename(nd2_file_path)}_C-{channel_num}.tiff')
 
 
@@ -57,13 +58,14 @@ def imageProcessor(path):
     threshold_new = np.mean(smoothed_image) + (9*np.std(smoothed_image))
     # Thresholding
     binary_image3 = smoothed_image > threshold_new
-
+    
 
 
     # 3D Region Segmentation _ just using connectivity, like a fill bucket tool!
     labeled_image = measure.label(binary_image3, connectivity=None)  # Adjust the connectivity as needed
 
     # Volume Calculation
+    print("Image thresholded. Segmenting volumes.")
     regions = measure.regionprops(labeled_image)
     for region in regions:
         volume = region.area  # In voxels
@@ -156,7 +158,7 @@ def loopThroughAllImages(path, backgrounds, channel_num):
         file_name_background = file_names[i]
         file_volumes = []
         num_vols_in_background = 0
-        nd2num = 1
+        nd2num = 1 #change
         for nd2 in file_name_background:
             tiff_path = f"{path_to_tiff}{os.path.basename(path_to_nd2 + nd2)}_C-{channel_num}.tiff"
             if not os.path.exists(tiff_path):
@@ -187,7 +189,7 @@ def loopThroughAllImages(path, backgrounds, channel_num):
 
 path_to_exp = "/volumes/Research/BM_LarschanLab/Mukulika/Feb2024/"
 
-speckle_volumes = loopThroughAllImages(path_to_exp, ["Female_PrLD mutant"], 1)
+speckle_volumes = loopThroughAllImages(path_to_exp, ["Female_PrLD"], 1)
 
 viewSegmentation("/volumes/Research/BM_LarschanLab/Mukulika/Feb2024/tiff/Female_PrLD mutant_Hrp38GFP_SG.nd2_C-1.tiff")
 
