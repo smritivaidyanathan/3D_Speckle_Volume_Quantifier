@@ -19,9 +19,10 @@ import csv
 
 
 
-def nd2converter(file_path, nd2_file, channel_num):
+def nd2converter(file_path, nd2_file, channel_num, num_channels):
     nd2_file_path = file_path + "nd2/" + nd2_file
     nd2 = nd2reader.ND2Reader(nd2_file_path)
+    print(nd2.metadata)
     print(f"{nd2.sizes['z']} z-stacks in {nd2_file_path}/nd2/ found.")
     arr = []
     print("Adding z-stacks...")
@@ -34,20 +35,23 @@ def nd2converter(file_path, nd2_file, channel_num):
     print("Done adding z-stacks.")
 
     z, h, w = np.shape(arr)
-    if (z == nd2.sizes['z'] and nd2.sizes['c'] == 2):
+    if (z == nd2.sizes['z'] and nd2.sizes['c'] == num_channels):
         print(f"Success! Tiff with {z} z-stacks of {w}x{h} size images was created")
     else:
         print(f"Uh oh! Something went wrong. Tiff with {z} z-stacks of {w}x{h} size images was created. Is this what you expected?")
-        return -1
+        return []
     tiff_file_path = file_path + "tiff"
     io.imsave(f'{tiff_file_path}/{os.path.basename(nd2_file_path)}_C-{channel_num}.tiff', arr, check_contrast=False)
-    print("Image successfully saved.")
-    return (f'{tiff_file_path}/{os.path.basename(nd2_file_path)}_C-{channel_num}.tiff')
+    return arr
+    #print("Image successfully saved.")
+
+    #return (f'{tiff_file_path}/{os.path.basename(nd2_file_path)}_C-{channel_num}.tiff')
 
 
-def imageProcessor(path):
+def imageProcessor(arr):
     # Load your 3D stack image
-    image = np.stack(io.imread(path), axis = 0)
+    #image = np.stack(io.imread(path), axis = 0)
+    image = arr
     speckle_volumes = []
     # Apply Gaussian smoothing to reduce noise.
     sigma = 1.0
@@ -55,7 +59,7 @@ def imageProcessor(path):
 
 
     # Thresholding
-    threshold_new = np.mean(smoothed_image) + (9*np.std(smoothed_image))
+    threshold_new = np.mean(smoothed_image) + (17*np.std(smoothed_image))
     # Thresholding
     binary_image3 = smoothed_image > threshold_new
     
@@ -81,7 +85,7 @@ def viewSegmentation (path):
 
     print(np.mean(smoothed_image))
     print(np.std(smoothed_image))
-    threshold_new = np.mean(smoothed_image) + (9*np.std(smoothed_image))
+    threshold_new = np.mean(smoothed_image) + (15*np.std(smoothed_image))
     print(threshold_new)
     # Thresholding
     binary_image3 = smoothed_image > threshold_new
@@ -98,6 +102,7 @@ def viewSegmentation (path):
 
     # Add the original 3D image
 
+    viewer.add_image(image)
     viewer.add_image(binary_image3)
     viewer.add_labels(labeled_image)
 
@@ -147,7 +152,7 @@ def writeVolumesToCSV(volumes, background, csv_path):
             csvwriter.writerow(movie) 
 
 
-def loopThroughAllImages(path, backgrounds, channel_num):
+def loopThroughAllImages(path, backgrounds, channel_num, num_channels):
     speckle_volumes = []
     path_to_nd2 = path + "nd2/"
     path_to_tiff =  path + "tiff/"
@@ -163,13 +168,13 @@ def loopThroughAllImages(path, backgrounds, channel_num):
             tiff_path = f"{path_to_tiff}{os.path.basename(path_to_nd2 + nd2)}_C-{channel_num}.tiff"
             if not os.path.exists(tiff_path):
                 print("Tiff file " + tiff_path + " does not exist yet. Converting from nd2.") 
-                result = nd2converter(path, nd2, channel_num)
-                if (result == -1):
+                result = nd2converter(path, nd2, channel_num, num_channels)
+                if (len(result) == 0):
                     print("Skipping ... Error found ...")
                     continue
             else:
                 print("Tiff file " + tiff_path + " already exists. Proceeding to quantification.") 
-            volumes_from_file = imageProcessor(tiff_path)    
+            volumes_from_file = imageProcessor(result)    
             file_volumes.append(volumes_from_file)
             print(f"{nd2num}/{len(file_name_background)} files quantified")
             nd2num+=1
@@ -190,9 +195,11 @@ def loopThroughAllImages(path, backgrounds, channel_num):
 
 path_to_exp = "/volumes/Research/BM_LarschanLab/Mukulika/Feb2024/"
 
-speckle_volumes = loopThroughAllImages(path_to_exp, ["Female_PrLD"], 1)
+#speckle_volumes = loopThroughAllImages(path_to_exp, ["female_con_Hrp38GFP and CLAMP"], 1, 3)
+viewSegmentation(path_to_exp+ "tiff/female_con_Hrp38GFP and CLAMP006.nd2_C-1.tiff")
 
-viewSegmentation("/volumes/Research/BM_LarschanLab/Mukulika/Feb2024/tiff/Female_PrLD mutant_Hrp38GFP_SG.nd2_C-1.tiff")
+
+
 
 # files = os.listdir("tiff_images_2")
 # files = [f for f in files if os.path.isfile(os.path.join(f"{path_to_exp}/tiff", f))]
