@@ -22,15 +22,16 @@ import csv
 def nd2converter(file_path, nd2_file, channel_num, num_channels):
     nd2_file_path = file_path + "nd2/" + nd2_file
     nd2 = nd2reader.ND2Reader(nd2_file_path)
-    print(nd2.metadata)
     print(f"{nd2.sizes['z']} z-stacks in {nd2_file_path}/nd2/ found.")
     arr = []
     print("Adding z-stacks...")
+    percentiles = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
     for z in range (nd2.sizes['z']):
         arr.append(nd2.get_frame_2D(channel_num, 0, z, 0, 0, 0))
         progress = round(float(z/nd2.sizes['z']) * 100)
-        if (progress % 10 == 0):
-            print(f"{progress}% done.")
+        if (progress >= percentiles[0]):
+            print(f"{percentiles[0]}% done.")
+            percentiles.remove(percentiles[0])
     arr = np.array(arr, dtype='uint16')
     print("Done adding z-stacks.")
 
@@ -41,7 +42,7 @@ def nd2converter(file_path, nd2_file, channel_num, num_channels):
         print(f"Uh oh! Something went wrong. Tiff with {z} z-stacks of {w}x{h} size images was created. Is this what you expected?")
         return []
     tiff_file_path = file_path + "tiff"
-    io.imsave(f'{tiff_file_path}/{os.path.basename(nd2_file_path)}_C-{channel_num}.tiff', arr, check_contrast=False)
+    #io.imsave(f'{tiff_file_path}/{os.path.basename(nd2_file_path)}_C-{channel_num}.tiff', arr, check_contrast=False)
     return arr
     #print("Image successfully saved.")
 
@@ -195,8 +196,8 @@ def loopThroughAllImages(path, backgrounds, channel_num, num_channels):
 
 path_to_exp = "/volumes/Research/BM_LarschanLab/Mukulika/Feb2024/"
 
-#speckle_volumes = loopThroughAllImages(path_to_exp, ["female_con_Hrp38GFP and CLAMP"], 1, 3)
-viewSegmentation(path_to_exp+ "tiff/female_con_Hrp38GFP and CLAMP006.nd2_C-1.tiff")
+speckle_volumes = loopThroughAllImages(path_to_exp, ["female_con"], 1, 3)
+# viewSegmentation(path_to_exp+ "tiff/female_con")
 
 
 

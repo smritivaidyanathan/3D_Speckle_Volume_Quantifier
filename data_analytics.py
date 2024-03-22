@@ -44,7 +44,20 @@ def make_mean_bar(data_backgrounds, legend, title, save_path,  show = False):
 
 def make_mean_scatter(data_backgrounds, legend, title, save_path, show = False):
     means = data_backgrounds.mean(axis=1)
-    confidence_intervals= [stats.t.interval(0.95, len(data)-1, loc=np.mean(data)) for data in data_backgrounds]
+    colors = ['red', 'green', 'blue', 'green']
+    #confidence_intervals= [stats.t.interval(0.95, len(data)-1, loc=np.mean(data)) for data in data_backgrounds]
+    for i, column_data in enumerate(means):
+        plt.scatter([i] * len(column_data), column_data, color=colors[i], label=f'{legend[i]}')
+    plt.xlabel('Column')
+    plt.ylabel('Value')
+    plt.title(f'{title}')
+    plt.legend()
+    plt.savefig(f'{save_path}{title}')
+    if (show):
+        plt.show()
+
+# Show plot
+plt.show()
 
 def make_med_or_var_bar(data_backgrounds, legend, title, save_path, var = False, show = False):
     quals = [np.median(data) for data in data_backgrounds]
@@ -53,9 +66,10 @@ def make_med_or_var_bar(data_backgrounds, legend, title, save_path, var = False,
         quals = [np.var(data) for data in data_backgrounds]
         ylabel = "Variance"
 
+    legend_with_N = [f"{legend[i]} (N={len(data_backgrounds[i])})" for i in range(len(legend))]
     confidence_interval = [bootstrapcli(data) for data in data_backgrounds]
     yerr = [[abs(quals[i] - confidence_interval[i][0])  for i in range(len(data_backgrounds))], [abs(quals[i] - confidence_interval[i][1])  for i in range(len(data_backgrounds))]]
-    plt.bar(legend, height = quals, yerr=yerr, align = 'center', capsize=5, alpha=0.7)
+    plt.bar(legend_with_N, height = quals, yerr=yerr, align = 'center', capsize=5, alpha=0.7)
     plt.xlabel('Experimental Conditions')
     plt.ylabel(f'{ylabel} of Speckle Size (pixels)')
     plt.title(f'{title}')
@@ -109,12 +123,12 @@ def get_data_for_backgrounds(data_backgrounds_dict, selected_backgrounds):
 def display_figs_from_exp(path):
     path_to_csv= path + "/csv/"
     data_backgrounds_dict = csv_files_to_dict(path_to_csv)
-    selected_backgrounds = ["Female_PrLD", "Male_PrLD"]
+    selected_backgrounds = ["Male_Con", "female_con"]
     data_backgrounds = get_data_for_backgrounds(data_backgrounds_dict, selected_backgrounds)
-    make_dist_histogram(data_backgrounds, selected_backgrounds, "In Vitro Distribution of Female PrLD speckle Volumes", f'{path}/figs/', ranges = (0,500), show = True)
-    make_mean_bar(data_backgrounds, selected_backgrounds, "In Vitro Mean of Female PrLD speckle Volumes",  f'{path}/figs/', show = True)
-    make_med_or_var_bar(data_backgrounds, selected_backgrounds, "In Vitro Median of Female PrLD speckle Volumes",  f'{path}/figs/', show = True) 
-    make_med_or_var_bar(data_backgrounds, selected_backgrounds, "In Vitro Variance of Female PrLD speckle Volumes",  f'{path}/figs/',  var = False, show = True) 
+    make_dist_histogram(data_backgrounds, selected_backgrounds, "In Vitro Distribution of  PrLD speckle Volumes", f'{path}/figs/', ranges = (0,500), show = True)
+    make_mean_bar(data_backgrounds, selected_backgrounds, "In Vitro Mean of  PrLD speckle Volumes",  f'{path}/figs/', show = True)
+    make_med_or_var_bar(data_backgrounds, selected_backgrounds, "In Vitro Median of  PrLD speckle Volumes",  f'{path}/figs/', show = True) 
+    make_med_or_var_bar(data_backgrounds, selected_backgrounds, "In Vitro Variance of  PrLD speckle Volumes",  f'{path}/figs/',  var = False, show = True) 
 
 
 path_to_exp = "/volumes/Research/BM_LarschanLab/Mukulika/Feb2024/"
