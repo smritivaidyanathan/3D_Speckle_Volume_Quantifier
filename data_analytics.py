@@ -8,6 +8,8 @@ from scipy import stats
 import csv
 import tkinter as tk
 from tkinter import filedialog
+import random
+import math
 
 def make_dist_histogram(data_backgrounds, legend, title, save_path, ylim = -1, ranges = None, show = False, bins=50):
     for i in range(len(data_backgrounds)):
@@ -28,38 +30,31 @@ def make_dist_histogram(data_backgrounds, legend, title, save_path, ylim = -1, r
 def make_mean_bar(data_backgrounds, legend, title, save_path,  show = False):
     means = [np.mean(data) for data in data_backgrounds]
     legend_with_N = [f"{legend[i]} (N={len(data_backgrounds[i])})" for i in range(len(legend))]
-    confidence_interval= [stats.t.interval(0.95, len(data)-1, loc=np.mean(data)) for data in data_backgrounds]
-    print(confidence_interval)
-    print(means)
-    yerr=[[abs(means[i] - confidence_interval[i][0])  for i in range(len(data_backgrounds))], [abs(means[i] - confidence_interval[i][1])  for i in range(len(data_backgrounds))]]
-    print(yerr)
-    plt.bar(legend_with_N, means, yerr=yerr,align = 'center', capsize=5, alpha=0.7)
+    
+    error = [1.96*(np.std(data)/(math.sqrt(len(data)))) for data in data_backgrounds]
+    plt.bar(legend_with_N, means, yerr=error,align = 'center', capsize=5, alpha=0.7)
     plt.xlabel('Experimental Conditions')
     plt.ylabel('Mean Speckle Size (pixels)')
     plt.title(f'{title}')
     plt.savefig(f'{save_path}{title}')
     if (show):
         plt.show()
-    return means, confidence_interval
+    return means, error
 
 def make_mean_scatter(movie_wise_data_backgrounds, data_backgrounds, legend, title, save_path, show = False):
     means = [[np.mean(inner_list) for inner_list in sublist] for sublist in movie_wise_data_backgrounds]
     outer_means =[np.mean(data) for data in data_backgrounds]
     colors = ['blue', 'red', 'deepskyblue', 'magenta']
     legend_with_N = [f"{legend[i]} (N={len(data_backgrounds[i])})" for i in range(len(legend))]
-
+    error = [1.96*(np.std(data)/(math.sqrt(len(data)))) for data in data_backgrounds]
+    plt.bar(range(len(outer_means)), outer_means, yerr= error,color='gray', alpha=0.5, capsize=10)
     #confidence_intervals= [stats.t.interval(0.95, len(data)-1, loc=np.mean(data)) for data in data_backgrounds]
     for i, column_data in enumerate(means):
-        plt.scatter([i] * len(column_data), column_data, color=colors[i], label=f'{legend[i]}')
-    confidence_interval= [stats.t.interval(0.95, len(data)-1, loc=np.mean(data)) for data in data_backgrounds]
-    yerr=[[abs(outer_means[i] - confidence_interval[i][0])  for i in range(len(data_backgrounds))], [abs(outer_means[i] - confidence_interval[i][1])  for i in range(len(data_backgrounds))]]
-    print(yerr)
-    plt.bar(range(len(outer_means)), outer_means, yerr= yerr,color='gray', alpha=0.5, capsize=10)
-    plt.xlabel('Column')
+        plt.scatter([i] * len(column_data), column_data, color=colors[i], label=f'{legend[i]}', alpha = 0.5)
     plt.xticks(range(len(legend_with_N)), legend_with_N)
-    plt.ylabel('Value')
+    plt.ylabel('Speckle Volume (pixels)')
     plt.title(f'{title}')
-    plt.legend()
+    #plt.legend()
     plt.savefig(f'{save_path}{title}')
     if (show):
         plt.show()
@@ -75,10 +70,9 @@ def make_med_or_var_bar(data_backgrounds, legend, title, save_path, var = False,
         ylabel = "Variance"
 
     legend_with_N = [f"{legend[i]} (N={len(data_backgrounds[i])})" for i in range(len(legend))]
-    confidence_interval = [bootstrapcli(data) for data in data_backgrounds]
-    yerr = [[abs(quals[i] - confidence_interval[i][0])  for i in range(len(data_backgrounds))], [abs(quals[i] - confidence_interval[i][1])  for i in range(len(data_backgrounds))]]
     
-    plt.bar(legend_with_N, height = quals, yerr=yerr, align = 'center', capsize=5, alpha=0.7)
+    error = [bootstrapcli(data) for data in data_backgrounds]
+    plt.bar(legend_with_N, height = quals, yerr=error, align = 'center', capsize=5, alpha=0.7)
     plt.xlabel('Experimental Conditions')
     plt.ylabel(f'{ylabel} of Speckle Size (pixels)')
     plt.title(f'{title}')
@@ -86,7 +80,7 @@ def make_med_or_var_bar(data_backgrounds, legend, title, save_path, var = False,
     plt.savefig(f'{save_path}{title}')
     if (show):
         plt.show()
-    return quals, confidence_interval
+    return quals
 
 def bootstrapcli(data , var = False) :
     num_bootstraps = 1000
@@ -97,8 +91,9 @@ def bootstrapcli(data , var = False) :
         if var:
             qual = np.var(bootstrap_sample)
         bootstrap_quals.append(qual)
-    confidence_interval = stats.t.interval(0.95, len(bootstrap_quals)-1, loc=np.mean(bootstrap_quals))
-    return confidence_interval
+    error =1.96*(np.std(bootstrap_quals)/(math.sqrt(len(bootstrap_quals))))
+
+    return error
 
 
 path_to_exp = "/volumes/Research/BM_LarschanLab/Mukulika/Feb2024/"
@@ -139,7 +134,7 @@ def display_figs_from_exp(path):
     selected_backgrounds = ["Male_Con", "female_con", "Male_PrLD", "Female_PrLD"]
     data_backgrounds = get_data_for_backgrounds(data_backgrounds_dict, selected_backgrounds)
     data_backgrounds_movie_wise = get_data_for_backgrounds(csv_movie_wise_dict, selected_backgrounds)
-    make_mean_scatter(data_backgrounds_movie_wise, data_backgrounds, ["Male WT", "Female WT", "Male delPrLD", "Female delPrLD"], "Mean Scatter test", f'{path}/figs/', show = True)
+    make_mean_scatter(data_backgrounds_movie_wise, data_backgrounds, ["Male WT", "Female WT", "Male delPrLD", "Female delPrLD"], "Mean of In Vitro Speckle Volumes with Movie-Wise Means", f'{path}/figs/', show = True)
     # make_dist_histogram(data_backgrounds, selected_backgrounds, "In Vitro Distribution of  PrLD speckle Volumes", f'{path}/figs/', ranges = (0,500), show = True)
     # make_mean_bar(data_backgrounds, selected_backgrounds, "In Vitro Mean of  PrLD speckle Volumes",  f'{path}/figs/', show = True)
     # make_med_or_var_bar(data_backgrounds, selected_backgrounds, "In Vitro Median of  PrLD speckle Volumes",  f'{path}/figs/', show = True) 
