@@ -48,7 +48,6 @@ def make_mean_scatter(movie_wise_data_backgrounds, data_backgrounds, legend, tit
     legend_with_N = [f"{legend[i]} (N={len(data_backgrounds[i])})" for i in range(len(legend))]
     error = [1.96*(np.std(data)/(math.sqrt(len(data)))) for data in data_backgrounds]
     plt.bar(range(len(outer_means)), outer_means, yerr= error,color='gray', alpha=0.5, capsize=10)
-    #confidence_intervals= [stats.t.interval(0.95, len(data)-1, loc=np.mean(data)) for data in data_backgrounds]
     for i, column_data in enumerate(means):
         plt.scatter([i] * len(column_data), column_data, color=colors[i], label=f'{legend[i]}', alpha = 0.5)
     plt.xticks(range(len(legend_with_N)), legend_with_N)
@@ -63,16 +62,24 @@ def make_mean_scatter(movie_wise_data_backgrounds, data_backgrounds, legend, tit
 plt.show()
 
 def make_med_or_var_bar(data_backgrounds, legend, title, save_path, var = False, show = False):
-    quals = [np.median(data) for data in data_backgrounds]
+    outer_quals = [np.median(data) for data in data_backgrounds]
+    colors = ['blue', 'red', 'deepskyblue', 'magenta']
+   
     ylabel = "Median"
+    error = [bootstrapcli(data, var = False) for data in data_backgrounds]
+
     if var:
-        quals = [np.var(data) for data in data_backgrounds]
+        outer_quals = [np.var(data) for data in data_backgrounds]
+        print(outer_quals)
         ylabel = "Variance"
+        error = [bootstrapcli(data, var = True) for data in data_backgrounds]
+
 
     legend_with_N = [f"{legend[i]} (N={len(data_backgrounds[i])})" for i in range(len(legend))]
+
+    plt.bar(legend_with_N, height = outer_quals, yerr=error, align = 'center', color = colors, capsize=10, alpha=0.7)
+
     
-    error = [bootstrapcli(data) for data in data_backgrounds]
-    plt.bar(legend_with_N, height = quals, yerr=error, align = 'center', capsize=5, alpha=0.7)
     plt.xlabel('Experimental Conditions')
     plt.ylabel(f'{ylabel} of Speckle Size (pixels)')
     plt.title(f'{title}')
@@ -80,7 +87,7 @@ def make_med_or_var_bar(data_backgrounds, legend, title, save_path, var = False,
     plt.savefig(f'{save_path}{title}')
     if (show):
         plt.show()
-    return quals
+    return outer_quals
 
 def bootstrapcli(data , var = False) :
     num_bootstraps = 1000
@@ -130,15 +137,16 @@ def get_data_for_backgrounds(data_backgrounds_dict, selected_backgrounds):
 #ideally turn this into a GUI application
 def display_figs_from_exp(path):
     path_to_csv= path + "/csv/"
+    legend = ["Male WT", "Female WT", "Male delPrLD", "Female delPrLD"]
     data_backgrounds_dict, csv_movie_wise_dict = csv_files_to_dict(path_to_csv)
     selected_backgrounds = ["Male_Con", "female_con", "Male_PrLD", "Female_PrLD"]
     data_backgrounds = get_data_for_backgrounds(data_backgrounds_dict, selected_backgrounds)
     data_backgrounds_movie_wise = get_data_for_backgrounds(csv_movie_wise_dict, selected_backgrounds)
-    make_mean_scatter(data_backgrounds_movie_wise, data_backgrounds, ["Male WT", "Female WT", "Male delPrLD", "Female delPrLD"], "Mean of In Vitro Speckle Volumes with Movie-Wise Means", f'{path}/figs/', show = True)
-    # make_dist_histogram(data_backgrounds, selected_backgrounds, "In Vitro Distribution of  PrLD speckle Volumes", f'{path}/figs/', ranges = (0,500), show = True)
+    make_mean_scatter(data_backgrounds_movie_wise, data_backgrounds, legend, "Mean of In Vitro Speckle Volumes with Movie-Wise Means", f'{path}/figs/', show = True)
+    make_dist_histogram(data_backgrounds, legend, " Distribution of In Vitro Speckle Volumes", f'{path}/figs/', ranges = (0,500), show = True)
     # make_mean_bar(data_backgrounds, selected_backgrounds, "In Vitro Mean of  PrLD speckle Volumes",  f'{path}/figs/', show = True)
-    # make_med_or_var_bar(data_backgrounds, selected_backgrounds, "In Vitro Median of  PrLD speckle Volumes",  f'{path}/figs/', show = True) 
-    # make_med_or_var_bar(data_backgrounds, selected_backgrounds, "In Vitro Variance of  PrLD speckle Volumes",  f'{path}/figs/',  var = False, show = True) 
+    make_med_or_var_bar( data_backgrounds, legend, "Median of In Vivo Speckle Volumes",  f'{path}/figs/', show = True) 
+    make_med_or_var_bar( data_backgrounds, legend, "Variance of In Vivo Speckle Volumes",  f'{path}/figs/',  var = True, show = True) 
 
 
 path_to_exp = "/volumes/Research/BM_LarschanLab/Mukulika/Feb2024"
