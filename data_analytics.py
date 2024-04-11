@@ -44,35 +44,21 @@ def calculate_p_values(data, legend):
     p_values_table = np.zeros((len(data),len(data)))
     t_values_table = np.zeros((len(data),len(data)))
     for i in range(len(data)):
-        for j in range(i+1, len(data)):  # Avoid redundant comparisons and the diagonal
-            # Perform the statistical test (e.g., t-test)
+        for j in range(i+1, len(data)):
             t_value, p_value = stats.ttest_ind(data[i], data[j])
-            # Store the p-value in the table
             p_values_table[i, j] = p_value
             t_values_table[i, j] = t_value
-            # print(f'{legend[i]} with a mean volume of {np.mean(data[i])} pixels and {legend[j]} pixels with a mean volume of {np.mean(data[j])} (p value={p_value}, t value={t_value})')
-            # Since p-values are symmetric, store the same value in the symmetric position
             p_values_table[j, i] = p_value
             t_values_table[j, i] = t_value
     with open("p_and_t_values.csv", 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        
-        # Write header row
         writer.writerow([''] + legend)
-        
-        # Write data rows
         for i, row in enumerate(p_values_table):
             writer.writerow([legend[i]] + list(row))
-
         writer.writerow('\n\n\n')
-
         writer.writerow([''] + legend)
-        
-        # Write data rows
         for i, row in enumerate(t_values_table):
             writer.writerow([legend[i]] + list(row))
-
-
 
 def make_mean_scatter(movie_wise_data_backgrounds, data_backgrounds, legend, title, save_path, show = False,  colors = ['blue', 'deepskyblue', 'red', 'magenta']):
     means = [[np.mean(inner_list) for inner_list in sublist] for sublist in movie_wise_data_backgrounds]
@@ -86,34 +72,22 @@ def make_mean_scatter(movie_wise_data_backgrounds, data_backgrounds, legend, tit
     plt.xticks(range(len(legend_with_N)), legend_with_N)
     plt.ylabel('Speckle Volume (pixels)')
     plt.title(f'{title}')
-    #plt.legend()
     plt.savefig(f'{save_path}{title}')
     if (show):
         plt.show()
 
-    
-
-# Show plot
-plt.show()
-
 def make_med_or_var_bar(data_backgrounds, legend, title, save_path, var = False, show = False, colors = ['blue', 'deepskyblue', 'red', 'magenta']):
     outer_quals = [np.median(data) for data in data_backgrounds]
-   
     ylabel = "Median"
     error = [bootstrapcli(data, var = False) for data in data_backgrounds]
-
     if var:
         outer_quals = [np.var(data) for data in data_backgrounds]
         print(outer_quals)
         ylabel = "Variance"
         error = [bootstrapcli(data, var = True) for data in data_backgrounds]
-
-
     legend_with_N = [f"{legend[i]} (N={len(data_backgrounds[i])})" for i in range(len(legend))]
 
     plt.bar(legend_with_N, height = outer_quals, yerr=error, align = 'center', color = colors, capsize=10, alpha=0.7)
-
-    
     plt.xlabel('Experimental Conditions')
     plt.ylabel(f'{ylabel} of Speckle Size (pixels)')
     plt.title(f'{title}')
