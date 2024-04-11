@@ -250,7 +250,9 @@ def loopThroughAllImages(path, backgrounds, channel_num, num_channels, n):
 
 
 '''
-Make all your calls below!
+Make all your calls below! Note. I ran this pipeline in Python 3.11.6. I find that the nd2 converter does 
+not work in other versions. If you want to use a different version, you will need to change the nd2 converter
+method. 
 
 Usage instructions:
 1. Create experiment folder with the following folders inside: tiff, csv, figs, nd2
