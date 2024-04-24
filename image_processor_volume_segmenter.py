@@ -23,7 +23,7 @@ import math
 Method to convert z-stack nd2 files into 3D arrays containing pixel data. Returns
 array, method is called within loopThroughAllImages.
 '''
-def nd2converter(file_path, nd2_file, channel_num, num_channels):
+def nd2converter(file_path, nd2_file, channel_num):
     nd2_file_path = file_path + "nd2/" + nd2_file
     nd2 = nd2reader.ND2Reader(nd2_file_path)
     #Uncomment the below line if you would like the program to output the metadata of your nd2 file. 
@@ -43,7 +43,7 @@ def nd2converter(file_path, nd2_file, channel_num, num_channels):
     print("Done adding z-stacks.")
 
     z, h, w = np.shape(arr)
-    if (z == nd2.sizes['z'] and nd2.sizes['c'] == num_channels):
+    if (z == nd2.sizes['z']):
         print(f"Success! Array with {z} z-stacks of {w}x{h} size images was created")
     else:
         print(f"Uh oh! Something went wrong. Array with {z} z-stacks of {w}x{h} size images was created. Is this what you expected?")
@@ -91,13 +91,13 @@ line in nd2converter.
 '''
 def viewSegmentation (path, n):
     image = np.stack(io.imread(path), axis = 0)
-
+    print("a")
     #threshold
     sigma = 1.0
     smoothed_image = gaussian_filter(image, sigma=sigma)
     threshold_new = np.mean(smoothed_image) + (n*np.std(smoothed_image))
     binary_image3 = smoothed_image > threshold_new
-
+    print("b")
     #label our volumes
     labeled_image = measure.label(binary_image3, connectivity=None)  
     speckle_volumes = []
@@ -105,7 +105,7 @@ def viewSegmentation (path, n):
     for region in regions:
         volume = region.area
         speckle_volumes.append(volume)
-
+    print("c")
     #launch 3D viewer
     viewer = napari.Viewer()
     viewer.add_image(image)
@@ -228,7 +228,7 @@ def loopThroughAllImages(path, backgrounds, channel_num, num_channels, n):
             tiff_path = f"{path_to_tiff}{os.path.basename(path_to_nd2 + nd2)}_C-{channel_num}.tiff"
             if not os.path.exists(tiff_path):
                 print("Tiff file " + tiff_path + " does not exist. Creating array from nd2.") 
-                result = nd2converter(path, nd2, channel_num, num_channels)
+                result = nd2converter(path, nd2, channel_num)
                 if (len(result) == 0):
                     print("Skipping ... Error found ...")
                     continue
@@ -265,6 +265,7 @@ line in nd2converter if you want to do this!
 each z-stack will be on a seperate row. 
 '''
 
+viewSegmentation("/Users/smriti/Desktop/3D_Speckle_Volume_Calculator/tiff_images_2/Number_2-Hrp38red and CLAMP1-300WTgreenwithTEV.nd2_C-0.tiff", 7)
 #Example usage
 path_to_exp = "/volumes/Research/BM_LarschanLab/Smriti/in_vitro/"
 speckle_volumes = loopThroughAllImages(path_to_exp, ["CLAMP_WT"], 0, 2, 7)

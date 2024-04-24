@@ -338,6 +338,7 @@ def in_vitro_display_figs_from_exp(path, colors = ["darkgreen", "lightgreen"]):
 CALL YOUR METHODS BELOW! Make sure to specify the path to your experiment. 
 '''
 
+
 #Example usage
 # path_to_exp =  "/volumes/Research/BM_LarschanLab/Smriti/in_vitro/"
 # in_vitro_display_figs_from_exp(path_to_exp)
