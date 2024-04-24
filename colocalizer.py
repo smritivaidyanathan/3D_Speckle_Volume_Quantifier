@@ -5,6 +5,8 @@ from scipy import ndimage as ndi
 from skimage import data, filters, measure, segmentation
 from image_processor_volume_segmenter import nd2converter, getFileNames
 import os
+import csv
+
 
 '''
 Runs a test to see if all the packages are working properly. To use, just call the method!
@@ -88,15 +90,23 @@ def colocalize_file(channel1, channel2, display_plot):
 Colocalizes all files of a specific background and returns a list of PCCs and pvals
 from each nd2 file in that background. 
 '''
-def colocalize_background(path, list_of_files_in_background, channels, display_plot):
+def colocalize_background(path, list_of_files_in_background, channels, display_plot, path_to_csv):
     pccs = []
     pvals = []
-    for nd2 in list_of_files_in_background:
-        channel1 = nd2converter(path, nd2, channels[0])
-        channel2 = nd2converter(path, nd2, channels[1])
-        pcc, pval = colocalize_file(channel1, channel2, display_plot)
-        pccs.append(pcc)
-        pvals.append(pval)
+    path_to_csv_pcc = path_to_csv + "pcc.csv"
+    path_to_csv_pvalue = path_to_csv + "pvals.csv"
+    with open(path_to_csv_pcc, 'a', newline='') as pccs_csv:
+        with open(path_to_csv_pvalue, 'a', newline='') as pvalues_csv:
+            for nd2 in list_of_files_in_background:
+                channel1 = nd2converter(path, nd2, channels[0])
+                channel2 = nd2converter(path, nd2, channels[1])
+                pcc, pval = colocalize_file(channel1, channel2, display_plot)
+                pccs.append(pcc)
+                pvals.append(pval)
+            writer1 = csv.writer(pccs_csv)
+            writer1.writerow(pccs)
+            writer2 = csv.writer(pvalues_csv)
+            writer2.writerow(pvals)
     return pccs, pvals
 
 
@@ -108,13 +118,18 @@ in channels. Returns a list of list of pcc values and pvalues.
 def colocalize_all_backgrounds(path, backgrounds, channels, display_plot = False):
     pccs_backgrounds = []
     pvals_backgrounds = []
-    list_of_files_in_backgrounds = getFileNames(path, backgrounds)
+    path_to_nd2 = path + "nd2/"
+    path_to_csv = path + "csv/"
+    list_of_files_in_backgrounds = getFileNames(path_to_nd2, backgrounds)
     for list_background in list_of_files_in_backgrounds:
-        pccs, pvals = colocalize_background(path, list_background, channels, display_plot)
+        pccs, pvals = colocalize_background(path_to_nd2, list_background, channels, display_plot, path_to_csv)
         pccs_backgrounds.append(pccs)
         pvals_backgrounds.append(pvals)
     return pccs_backgrounds, pvals_backgrounds
-        
+    
+#path to nd2 folder. can be the same nd2 folder as the 3D quantification script!
+path = "/volumes/Research/BM_LarschanLab/Smriti/colocalization/nd2"
+pccs_backgrounds, pvals_backgrounds = colocalize_all_backgrounds (path, [], [])
 
 
 
