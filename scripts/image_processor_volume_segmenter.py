@@ -18,7 +18,6 @@ import math
 
 
 
-
 '''
 Method to convert z-stack nd2 files into 3D arrays containing pixel data. Returns
 array, method is called within loopThroughAllImages.
@@ -28,7 +27,7 @@ def nd2converter(file_path, nd2_file, channel_num):
     nd2 = nd2reader.ND2Reader(nd2_file_path)
     #Uncomment the below line if you would like the program to output the metadata of your nd2 file. 
     #print(nd2.metadata)
-    print(f"{nd2.sizes['z']} z-stacks in {nd2_file_path}/nd2/ found.")
+    print(f"{nd2.sizes['z']} z-stacks in {nd2_file_path} found.")
     arr = []
     print("Adding z-stacks...")
     percentiles = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
@@ -265,9 +264,9 @@ line in nd2converter if you want to do this!
 each z-stack will be on a seperate row. 
 '''
 
-viewSegmentation("/Users/smriti/Desktop/3D_Speckle_Volume_Calculator/tiff_images_2/Number_2-Hrp38red and CLAMP1-300WTgreenwithTEV.nd2_C-0.tiff", 7)
-#Example usage
-path_to_exp = "/volumes/Research/BM_LarschanLab/Smriti/in_vitro/"
-speckle_volumes = loopThroughAllImages(path_to_exp, ["CLAMP_WT"], 0, 2, 7)
+# viewSegmentation("/Users/smriti/Desktop/3D_Speckle_Volume_Calculator/tiff_images_2/Number_2-Hrp38red and CLAMP1-300WTgreenwithTEV.nd2_C-0.tiff", 7)
+# #Example usage
+# path_to_exp = "/volumes/Research/BM_LarschanLab/Smriti/in_vitro/"
+# speckle_volumes = loopThroughAllImages(path_to_exp, ["CLAMP_WT"], 0, 2, 7)
 
 
