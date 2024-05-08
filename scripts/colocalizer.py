@@ -8,6 +8,7 @@ import os
 import nd2reader
 import random
 import math
+from scipy import stats
 import csv
 
 
@@ -200,4 +201,72 @@ def colocalize_all_backgrounds(path, backgrounds, channels, display_plot = False
     
 #path to nd2 folder. can be the same nd2 folder as the 3D quantification script!
 path = "/volumes/Research/BM_LarschanLab/Smriti/Jan2024/"
-pccs_backgrounds, pvals_backgrounds = colocalize_all_backgrounds (path, ["female_con", "male_PrLD"], [0, 1])
+#pccs_backgrounds, pvals_backgrounds = colocalize_all_backgrounds (path, ["female_con", "male_PrLD"], [0, 1])
+
+"""
+Read a CSV file and return a list of values from the file.
+"""
+def read_csv(file_path):
+    values = []
+    with open(file_path, 'r', newline='') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            values.append(float(row[0]))
+    return values
+
+def read_csvs(file_path, csvs):
+    pccs = []
+    for csv in csvs:
+        row = read_csv(file_path + csv)
+        pccs.append(row)
+    return pccs
+
+def make_mean_scatter(movie_wise_data_backgrounds, legend, title, save_path, show = False,  colors = ['blue', 'deepskyblue', 'red', 'magenta']):
+    means = [np.mean(sublist) for sublist in movie_wise_data_backgrounds]
+    legend_with_N = [f"{legend[i]} (N={len(movie_wise_data_backgrounds[i])})" for i in range(len(legend))]
+    error = [1.96*(np.std(data)/(math.sqrt(len(data)))) for data in movie_wise_data_backgrounds]
+    plt.bar(range(len(means)), means, yerr= error,color='gray', alpha=0.5, capsize=10)
+    for i, column_data in enumerate(movie_wise_data_backgrounds):
+        plt.scatter([i] * len(column_data), column_data, color=colors[i], label=f'{legend[i]}', alpha = 0.5)
+    plt.xticks(range(len(legend_with_N)), legend_with_N)
+    plt.ylabel('Pearson Colocalization Coefficient')
+    plt.title(f'{title}')
+    #plt.savefig(f'{save_path}{title}')
+    if (show):
+        plt.show()
+
+'''
+Calculates pairwise p and t values of all data in data and outputs them into a csv file in /csv/. 
+
+data should be of type list of list of volumes, where outer list is per background, inner list is 
+pooled values from a specific background
+'''
+def calculate_p_and_t_values(data, legend, path_to_csv):
+    p_values_table = np.zeros((len(data),len(data)))
+    t_values_table = np.zeros((len(data),len(data)))
+    for i in range(len(data)):
+        for j in range(i+1, len(data)):
+            t_value, p_value = stats.ttest_ind(data[i], data[j])
+            p_values_table[i, j] = p_value
+            t_values_table[i, j] = t_value
+            p_values_table[j, i] = p_value
+            t_values_table[j, i] = t_value
+    with open("p_and_t_values.csv", 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([''] + legend)
+        for i, row in enumerate(p_values_table):
+            writer.writerow([legend[i]] + list(row))
+        writer.writerow('\n\n\n')
+        writer.writerow([''] + legend)
+        for i, row in enumerate(t_values_table):
+            writer.writerow([legend[i]] + list(row))
+
+def make_plot():
+    csvs = ["male_con_pcc.csv", "male_PrLD_pcc.csv", "female_con_pcc.csv", "female_PrLD_pcc.csv"]
+    pccs = read_csvs((path + "csv/"), csvs)
+    make_mean_scatter(pccs, ["Male WT", "Male delPrLD",  "Female WT", "Female delPrLD"], "Hrp38 and CLAMP Pearson Colocalization Coefficients", path, show = True)
+    calculate_p_and_t_values(pccs, ["Male WT", "Male delPrLD",  "Female WT", "Female delPrLD"], "pvalues.csv")
+    
+
+
+make_plot()
