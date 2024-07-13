@@ -156,7 +156,7 @@ def colocalize_background(path, list_of_files_in_background, background, channel
             else:
                 print(f'{nd2} is already (apparently) processed and colocalized, so skipping. Check progress.csv if unsure!')
         else :
-            print("oopsieeee " + nd2)
+            print("Male/Female Error, ignoring file." + nd2)
     return pccs, pvals
 
 """
